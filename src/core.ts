@@ -47,8 +47,10 @@ export class FormEngine<T extends Record<string, any>> {
         // Initialize from storage if available
         this.loadFromStorage();
 
-        // Initial validation
-        if (this.config.mode === 'all' || this.config.mode === 'onChange') {
+        // Initial validation - ONLY for 'all' mode or if explicitly requested.
+        // For 'onChange' or 'onBlur', we normally want to start "fresh" without errors visible
+        // unless initialValues are known to be dirty/invalid.
+        if (this.config.mode === 'all') {
             this.validateAll();
         }
     }
@@ -192,6 +194,15 @@ export class FormEngine<T extends Record<string, any>> {
         try {
             this.status = { ...this.status, isSubmitting: true, submitCount: this.status.submitCount + 1 };
             this.notifyForm();
+
+            // Touch all fields so errors become visible
+            for (const path of this.fields.keys()) {
+                const f = this.fields.get(path);
+                if (f && !f.isTouched) {
+                    this.fields.set(path, { ...f, isTouched: true });
+                    this.notifyField(path);
+                }
+            }
 
             const isValid = this.validateAll();
 
