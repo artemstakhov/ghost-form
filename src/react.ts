@@ -1,103 +1,98 @@
-import { useSyncExternalStore, useCallback } from 'react';
-import { FormEngine, Path, FormConfig } from './core';
+"use client";
 
-/**
- * Creates a Form instance.
- */
-export function createForm<T extends Record<string, any>>(config?: FormConfig<T>) {
-  return new FormEngine<T>(config);
+import { useSyncExternalStore, useCallback, useRef } from 'react';
+import { FormEngine } from './core';
+import { Path, PathValue, FormConfig } from './types';
+
+export function useForm<T extends Record<string, any>>(config: FormConfig<T>) {
+  // We use a ref to hold the form engine to ensure it persists across renders
+  // but is lazily initialized.
+  const formRef = useRef<FormEngine<T> | null>(null);
+  
+  if (!formRef.current) {
+    formRef.current = new FormEngine(config);
+  }
+
+  const form = formRef.current;
+
+  // Subscribe to whole form changes (submit/reset/etc)
+  const subscribe = useCallback(
+    (callback: () => void) => form.subscribe(() => callback()),
+    [form]
+  );
+  
+  const getSnapshot = () => form.getFormStatus();
+  
+  const formState = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+
+  return {
+    form,
+    formState, // e.g. .isSubmitting, .isValid
+    register: (name: Path<T>) => {
+      return { name };
+    },
+    handleSubmit: (
+      onValid: (values: T) => Promise<void> | void, 
+      onInvalid?: (errors: Record<string, string | undefined>) => void
+    ) => async (e?: React.BaseSyntheticEvent) => {
+        if (e && e.preventDefault) {
+            e.preventDefault();
+        }
+        await form.handleSubmit(onValid, onInvalid);
+    },
+    reset: form.reset.bind(form)
+  };
 }
 
-/**
- * React hook to consume a specific field.
- * Triggers re-render ONLY when this specific field changes.
- */
-export function useField<
-  TData extends Record<string, any>,
-  TValue = unknown
->(
-  form: FormEngine<TData>,
-  name: Path<TData> | string
+export function useField<T extends Record<string, any>, P extends Path<T>>(
+  form: FormEngine<T>,
+  name: P
 ) {
   const subscribe = useCallback(
     (callback: () => void) => {
-      return form.subscribeField(name, () => callback());
+      return form.subscribeToField(name, () => callback());
     },
     [form, name]
   );
 
   const getSnapshot = () => {
-    return form.getFieldState<TValue>(name);
+    return form.getFieldState(name);
+  };
+  
+  const getServerSnapshot = () => {
+      return form.getFieldState(name);
   };
 
-  const fieldState = useSyncExternalStore(subscribe, getSnapshot);
+  const fieldState = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const onChange = useCallback(
-    (eventOrValue: React.ChangeEvent<any> | any) => {
+    (eventOrValue: any) => {
       let newValue = eventOrValue;
-      // Basic event handling support
-      if (eventOrValue && typeof eventOrValue === 'object' && 'target' in eventOrValue) {
+      if (
+        eventOrValue && 
+        typeof eventOrValue === 'object' && 
+        'target' in eventOrValue
+      ) {
         const target = eventOrValue.target;
-        if ('checked' in target && target.type === 'checkbox') {
+        if (target.type === 'checkbox') {
           newValue = target.checked;
-        } else if ('value' in target) {
+        } else {
           newValue = target.value;
         }
       }
-      form.setValue(name, newValue);
+      form.setValue(name, newValue as PathValue<T, P>);
     },
     [form, name]
   );
 
   const onBlur = useCallback(() => {
-    form.setTouched(name, true);
+    form.setBlur(name);
   }, [form, name]);
 
   return {
-    value: fieldState.value,
-    error: fieldState.error,
-    touched: fieldState.touched,
-    dirty: fieldState.dirty,
-    isValid: fieldState.isValid,
-    onChange, // Standard handler that accepts events or values
-    onBlur,
-    setValue: onChange,
-  };
-}
-
-/**
- * Hook to watch specific fields and return their values.
- * Useful for conditional logic in React components.
- */
-export function useWatch<TData extends Record<string, any> = any>(
-  form: FormEngine<TData>,
-  names: (Path<TData> | string)[]
-) {
-  const subscribe = useCallback(
-    (callback: () => void) => {
-      const unsubs = names.map(name => form.subscribeField(name, () => callback()));
-      return () => unsubs.forEach(unsub => unsub());
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [form, JSON.stringify(names)]
-  );
-
-  const getSnapshot = () => {
-    return names.map(name => form.getValue(name));
-  };
-  
-  const values = useSyncExternalStore(subscribe, getSnapshot);
-  return values;
-}
-
-/**
- * Factory to create pre-bound hooks for a specific form instance.
- * Avoids passing the `form` object to every hook call.
- */
-export function createFormHooks<TData extends Record<string, any>>(form: FormEngine<TData>) {
-  return {
-    useField: <TValue = unknown>(name: Path<TData> | string) => useField<TData, TValue>(form, name),
-    useWatch: (names: (Path<TData> | string)[]) => useWatch(form, names),
-    form,
+    ...fieldState,
+    onChange, // can be passed to <input onChange>
+    onBlur,   // can be passed to <input onBlur>
+    value: fieldState.value
   };
 }

@@ -1,7 +1,7 @@
 {
   "name": "ghost-form",
-  "version": "1.0.0-beta.1",
-  "description": "Atomic, framework-agnostic form engine. No Providers, zero-overhead, sub-millisecond updates for React, Next.js, and React Native.",
+  "version": "1.0.0",
+  "description": "Atomic, framework-agnostic form engine with persistence and performance.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
