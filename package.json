@@ -19,6 +19,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "test": "vitest",
     "lint": "tsc --noEmit"
   },
   "keywords": [
@@ -34,9 +35,14 @@
     "react": ">=18.0.0"
   },
   "devDependencies": {
+    "@testing-library/dom": "^9.3.4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^14.3.1",
+    "@types/react": "^18.0.0",
+    "jsdom": "^28.0.0",
+    "react": "^18.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
-    "@types/react": "^18.0.0",
-    "react": "^18.0.0"
+    "vitest": "^4.0.18"
   }
 }

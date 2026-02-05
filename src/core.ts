@@ -1,4 +1,4 @@
-import { getByPath, setByPath, deepEqual } from './utils';
+import { getByPath, setByPath, deepEqual, deepClone } from './utils';
 
 /**
  * Utility type to recursively find all dot-notation paths in an object.
@@ -56,8 +56,10 @@ export class FormEngine<TData extends Record<string, any> = any> {
   private formSubscribers = new Set<FormSubscriber>();
 
   constructor(private config: FormConfig<TData> = {}) {
-    this.initialValues = config.initialValues ? { ...config.initialValues } : ({} as TData);
-    this.currentValues = { ...this.initialValues };
+    // Deep clone initialValues to prevent mutation when currentValues changes
+    this.initialValues = config.initialValues ? deepClone(config.initialValues) : ({} as TData);
+    // Deep clone again for currentValues
+    this.currentValues = deepClone(this.initialValues);
   }
 
   /**
@@ -93,6 +95,7 @@ export class FormEngine<TData extends Record<string, any> = any> {
   setValue(path: Path<TData> | string, value: unknown) {
     this.ensureField(path);
     
+    // Read the *current* field object before creating a new one
     const field = this.fields.get(path)!;
     const previousValue = field.value;
 
@@ -102,9 +105,14 @@ export class FormEngine<TData extends Record<string, any> = any> {
       
       const initialValue = getByPath(this.initialValues, path);
       
-      // Update atomic field state
-      field.value = value;
-      field.dirty = !deepEqual(initialValue, value);
+      // Create NEW field state object (Atomic & Immutable update for React)
+      const nextField: FieldState = {
+        ...field,
+        value,
+        dirty: !deepEqual(initialValue, value)
+      };
+      
+      this.fields.set(path, nextField);
       
       // Notify field subscribers
       this.notifyField(path);
@@ -122,7 +130,8 @@ export class FormEngine<TData extends Record<string, any> = any> {
     const field = this.fields.get(path)!;
     
     if (field.touched !== touched) {
-      field.touched = touched;
+      const nextField = { ...field, touched };
+      this.fields.set(path, nextField);
       this.notifyField(path);
     }
   }
@@ -135,8 +144,12 @@ export class FormEngine<TData extends Record<string, any> = any> {
     const field = this.fields.get(path)!;
     
     if (field.error !== error) {
-      field.error = error;
-      field.isValid = !error;
+      const nextField = { 
+        ...field, 
+        error, 
+        isValid: !error 
+      };
+      this.fields.set(path, nextField);
       this.notifyField(path);
     }
   }
@@ -197,7 +210,8 @@ export class FormEngine<TData extends Record<string, any> = any> {
     if (field) {
       const subscribers = this.fieldSubscribers.get(path);
       if (subscribers) {
-        subscribers.forEach(cb => cb({ ...field })); // Send copy to prevent mutation
+        // Pass the Immutable field object directly
+        subscribers.forEach(cb => cb(field)); 
       }
     }
   }

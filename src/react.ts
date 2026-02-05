@@ -1,10 +1,10 @@
 import { useSyncExternalStore, useCallback } from 'react';
-import { FormEngine, Path } from './core';
+import { FormEngine, Path, FormConfig } from './core';
 
 /**
  * Creates a Form instance.
  */
-export function createForm<T extends Record<string, any>>(config?: any) {
+export function createForm<T extends Record<string, any>>(config?: FormConfig<T>) {
   return new FormEngine<T>(config);
 }
 
@@ -33,7 +33,7 @@ export function useField<
   const fieldState = useSyncExternalStore(subscribe, getSnapshot);
 
   const onChange = useCallback(
-    (eventOrValue: any) => {
+    (eventOrValue: React.ChangeEvent<any> | any) => {
       let newValue = eventOrValue;
       // Basic event handling support
       if (eventOrValue && typeof eventOrValue === 'object' && 'target' in eventOrValue) {
