@@ -18,7 +18,7 @@ GhostForm is designed to outperform traditional form libraries in complex scenar
 ## Installation
 
 ```bash
-npm install ghost-form
+npm install @artemstakhov/ghost-form
 ```
 
 ## Quick Start
@@ -26,7 +26,7 @@ npm install ghost-form
 ### 1. Basic Usage
 
 ```tsx
-import { useForm, useField } from 'ghost-form';
+import { useForm, useField } from '@artemstakhov/ghost-form';
 
 interface UserForm {
   name: string;

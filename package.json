@@ -1,5 +1,5 @@
 {
-  "name": "ghost-form",
+  "name": "@artemstakhov/ghost-form",
   "version": "1.0.0",
   "description": "Atomic, framework-agnostic form engine with persistence and performance.",
   "main": "./dist/index.js",
