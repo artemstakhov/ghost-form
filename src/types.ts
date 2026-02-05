@@ -23,6 +23,8 @@ export type PathValue<T, P extends Path<T> | string> = P extends `${infer K}.${i
     ? T[P]
     : any;
 
+export type FormValues = Record<string, any>;
+
 /**
  * Storage interface for persistence plugins.
  */
