@@ -1,0 +1,42 @@
+{
+  "name": "ghost-form",
+  "version": "1.0.0-beta.1",
+  "description": "Atomic, framework-agnostic form engine. No Providers, zero-overhead, sub-millisecond updates for React, Next.js, and React Native.",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "form",
+    "react",
+    "typescript",
+    "atomic",
+    "performance"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "@types/react": "^18.0.0",
+    "react": "^18.0.0"
+  }
+}
