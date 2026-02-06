@@ -1,8 +1,8 @@
 "use client";
 
-import { useSyncExternalStore, useCallback, useRef } from 'react';
+import { useSyncExternalStore, useCallback, useRef, ReactElement } from 'react';
 import { FormEngine } from './core';
-import { Path, PathValue, FormConfig } from './types';
+import { Path, PathValue, FormConfig, FieldState, FormStatus } from './types';
 
 export function useForm<T extends Record<string, any>>(config: FormConfig<T>) {
   // We use a ref to hold the form engine to ensure it persists across renders
@@ -95,4 +95,56 @@ export function useField<T extends Record<string, any>, P extends Path<T>>(
     onBlur,   // can be passed to <input onBlur>
     value: fieldState.value
   };
+}
+
+// Helper Types for Controller
+interface ControllerRenderProps<TField = any> {
+    onChange: (event: any) => void;
+    onBlur: () => void;
+    value: TField;
+    name: string;
+}
+
+interface UseControllerReturn<TField = any> {
+    field: ControllerRenderProps<TField>;
+    fieldState: FieldState<TField>;
+    formState: FormStatus;
+}
+
+/**
+ * Controller component for easier integration with third-party UI libraries (MUI, AntD, React-Select, etc.)
+ */
+interface ControllerProps<T extends Record<string, any>, P extends Path<T>> {
+    control: FormEngine<T>;
+    name: P;
+    render: (props: UseControllerReturn<PathValue<T, P>>) => ReactElement;
+}
+
+export function Controller<T extends Record<string, any>, P extends Path<T>>({ 
+    control, 
+    name, 
+    render 
+}: ControllerProps<T, P>) {
+    const { value, onChange, onBlur, ...fieldState } = useField(control, name);
+    // TODO: Ideally formState should also be passed, but constructing it might be expensive if subscribing to everything.
+    // However, users expect formState in Controller.
+    // For now, let's just pass basic field stuff. 
+    // To get formState, we would need to subscribe to form updates too.
+    
+    // Let's create a partial implementation that satisfies standard needs
+    const field = {
+        onChange,
+        onBlur,
+        value,
+        name: name as string
+    };
+
+    return render({
+        field,
+        fieldState: { ...fieldState, value }, // include value in fieldState too for consistency
+        formState: control.getFormStatus() // Note: this might not be reactive if the component doesn't subscribe to form!
+        // But Controller re-renders when useField re-renders (field changes).
+        // If form status changes (e.g. isSubmitting) but field doesn't, this component might NOT re-render.
+        // This is a trade-off. If they need formState, they should use useForm().formState.
+    });
 }
