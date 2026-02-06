@@ -55,6 +55,10 @@ export class FormEngine<T extends Record<string, any>> {
         }
     }
 
+    public updateConfig(config: Partial<FormConfig<T>>) {
+        this.config = { ...this.config, ...config };
+    }
+
     /**
      * ----------- State Accessors -----------
      */

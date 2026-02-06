@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore, useCallback, useRef, ReactElement } from 'react';
+import { useSyncExternalStore, useCallback, useRef, ReactElement, useEffect } from 'react';
 import { FormEngine } from './core';
 import { Path, PathValue, FormConfig, FieldState, FormStatus } from './types';
 
@@ -14,6 +14,11 @@ export function useForm<T extends Record<string, any>>(config: FormConfig<T>) {
   }
 
   const form = formRef.current;
+
+  // Sync config on every render to ensure callbacks (like validate) are up to date
+  useEffect(() => {
+    form.updateConfig(config);
+  });
 
   // Subscribe to whole form changes (submit/reset/etc)
   const subscribe = useCallback(
