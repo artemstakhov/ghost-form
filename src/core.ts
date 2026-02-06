@@ -137,6 +137,7 @@ export class FormEngine<T extends Record<string, any>> {
         const newFieldState: FieldState<any> = {
             ...field,
             value,
+            error: undefined, // Clear error on change (stale validation)
             isDirty: !deepEqual(value, initialValue),
         };
 
